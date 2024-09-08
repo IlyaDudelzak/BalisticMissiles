@@ -8,7 +8,7 @@ name: "balistic-missiles-mod"
 author: "Ilya Dudelzak"
 
 #the fully qualified main class of the mod
-main: "IlyaDudelzak.BalisticMissilesMod"
+main: "BalisticMissiles.BalisticMissilesMod"
 
 #the mod description as seen in the mod dialog
 description: "Nuclear weapons! Let the enemies die!"
