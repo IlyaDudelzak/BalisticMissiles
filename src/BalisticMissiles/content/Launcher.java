@@ -11,26 +11,37 @@ import arc.graphics.g2d.TextureRegion;
 import arc.math.Interp;
 import arc.math.Mathf;
 import arc.math.geom.Geometry;
+import arc.scene.style.TextureRegionDrawable;
 import arc.scene.ui.layout.Table;
 import arc.struct.EnumSet;
+import arc.struct.ObjectMap;
+import arc.struct.OrderedMap;
 import arc.struct.Seq;
 import arc.util.Interval;
+import arc.util.Scaling;
 import arc.util.Tmp;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.Vars;
 import mindustry.content.Fx;
 import mindustry.entities.Effect;
+import mindustry.entities.bullet.BulletType;
+import mindustry.entities.effect.MultiEffect;
+import mindustry.entities.effect.WaveEffect;
+import mindustry.entities.effect.WrapEffect;
 import mindustry.game.EventType;
 import mindustry.gen.*;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Pal;
 import mindustry.logic.LAccess;
+import mindustry.type.Item;
 import mindustry.type.Sector;
 import mindustry.ui.Bar;
 import mindustry.ui.Styles;
 import mindustry.world.Block;
 import mindustry.world.blocks.campaign.LaunchPad;
+import mindustry.world.blocks.defense.turrets.ItemTurret;
+import mindustry.world.blocks.units.UnitFactory;
 import mindustry.world.meta.BlockFlag;
 import mindustry.world.meta.Stat;
 import mindustry.world.meta.StatUnit;
@@ -43,6 +54,7 @@ public class Launcher extends Block {
     public TextureRegion lightRegion;
     public TextureRegion podRegion;
     public Color lightColor;
+    public ObjectMap<Item, Integer> ammoTypes = new OrderedMap();
 
     public Launcher(String name) {
         super(name);
@@ -53,9 +65,12 @@ public class Launcher extends Block {
         this.hasItems = true;
         this.itemCapacity = 1;
         this.configurable = true;
+
         this.flags = EnumSet.of(new BlockFlag[]{BlockFlag.launchPad});
     }
-
+    public void ammo(Object... objects) {
+        this.ammoTypes = OrderedMap.of(objects);
+    }
     public void setStats() {
         super.setStats();
         this.stats.add(Stat.launchTime, this.launchTime / 60.0F, StatUnit.seconds);
@@ -83,6 +98,11 @@ public class Launcher extends Block {
         public float launchCounter;
 
         public LaunchPadBuild() {
+        }
+        public int acceptStack(Item item, int amount, Teamc source) {
+            Integer type = (Integer) Launcher.this.ammoTypes.get(item);
+//            return type == null ? 0 : Math.min(Launcher.this.itemCapacity - this.items.get(item), amount);
+            return 10;
         }
 
         public Graphics.Cursor getCursor() {
@@ -126,7 +146,12 @@ public class Launcher extends Block {
         public void updateTile() {
             if ((this.launchCounter += this.edelta()) >= Launcher.this.launchTime) {
                 Launcher.this.launchSound.at(this.x, this.y);
-                MissileLaunchUnit entity = MissileLaunchUnit.create(100, 100, 5);
+                MissileLaunchUnit entity = MissileLaunchUnit.create(
+                        100,
+                        100,
+                        5,
+                        podRegion
+                );
                 entity.set(this);
                 entity.lifetime(120.0F);
                 entity.team(this.team);
@@ -211,11 +236,11 @@ public class Launcher extends Block {
             Draw.z(129.0F);
             Block var9 = this.blockOn();
             TextureRegion var10000;
-            if (var9 instanceof LaunchPad) {
-                LaunchPad p = (LaunchPad)var9;
+            if (var9 instanceof Launcher) {
+                Launcher p = (Launcher)var9;
                 var10000 = p.podRegion;
             } else {
-                var10000 = Core.atlas.find("launchpod");
+                var10000 = Core.atlas.find("launcher");
             }
 
             TextureRegion region = var10000;

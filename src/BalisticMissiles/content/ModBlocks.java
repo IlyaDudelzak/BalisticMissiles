@@ -33,7 +33,7 @@ public class ModBlocks {
     public static void load(){
         penisPress = new GenericCrafter("penis-press") {
             {
-                this.requirements(Category.crafting, ItemStack.with(new Object[]{Items.copper, 75, Items.lead, 30}));
+                this.requirements(Category.crafting, ItemStack.with(new Object[]{Items.copper, 1500, Items.lead, 1500}));
                 this.craftEffect = Fx.pulverizeMedium;
                 this.outputItem = new ItemStack(ModItems.penis, 1);
                 this.craftTime = 600.0F;
@@ -44,10 +44,53 @@ public class ModBlocks {
             }
         };
         penisTurret = new ItemTurret("penis-turret"){{
-            requirements(Category.turret, with(Items.copper, 35));
+            requirements(Category.turret, with(new Object[]{Items.copper, 1500, Items.lead, 1500}));
             ammo(
                     Items.copper,  new BasicBulletType(1f, 0){{
-                        this.spawnUnit = ModUnits.penisMissile;
+                        this.spawnUnit = new MissileUnitType("penis-missile") {
+                            {
+                                this.trailColor = this.engineColor = Pal.techBlue;
+                                this.engineSize = 1.75F;
+                                this.engineLayer = 110.0F;
+                                this.speed = 3.7F;
+                                this.maxRange = 6.0F;
+                                this.lifetime = 900.0F;
+                                this.outlineColor = Pal.darkOutline;
+                                this.health = 550.0F;
+                                this.lowAltitude = true;
+                                this.parts.add(new FlarePart() {
+                                    {
+                                        this.progress = PartProgress.life.slope().curve(Interp.pow2In);
+                                        this.radius = 0.0F;
+                                        this.radiusTo = 35.0F;
+                                        this.stroke = 3.0F;
+                                        this.rotation = 45.0F;
+                                        this.y = -5.0F;
+                                        this.followRotation = true;
+                                    }
+                                });
+                                this.weapons.add(new Weapon() {
+                                    {
+                                        this.shootCone = 360.0F;
+                                        this.mirror = false;
+                                        this.reload = 1.0F;
+                                        this.shootOnDeath = true;
+                                        this.bullet = new ExplosionBulletType(5000.0F, 120.0F) {
+                                            {
+                                                this.shootEffect = new MultiEffect(new Effect[]{Fx.massiveExplosion, new WrapEffect(Fx.dynamicSpikes, Pal.techBlue, 24.0F), new WaveEffect() {
+                                                    {
+                                                        this.colorFrom = this.colorTo = Pal.techBlue;
+                                                        this.sizeTo = 120.0F;
+                                                        this.lifetime = 30.0F;
+                                                        this.strokeFrom = 4.0F;
+                                                    }
+                                                }});
+                                            }
+                                        };
+                                    }
+                                });
+                            }
+                        };
                     }}
             );
 
@@ -75,11 +118,12 @@ public class ModBlocks {
         }};
         BasicLauncher = new Launcher("launcher") {
             {
-                this.requirements(Category.effect, ItemStack.with(new Object[]{Items.copper, 1}));
+                this.requirements(Category.turret, ItemStack.with(new Object[]{Items.copper, 4000}));
                 this.size = 3;
                 this.itemCapacity = 100;
                 this.launchTime = 120.0F;
                 this.alwaysUnlocked = true;
+//                ammo(Items.surgeAlloy, 5);
             }
         };
     }

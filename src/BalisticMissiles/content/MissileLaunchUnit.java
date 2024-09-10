@@ -21,8 +21,13 @@ import mindustry.content.Blocks;
 import mindustry.content.Fx;
 import mindustry.content.UnitTypes;
 import mindustry.core.World;
+import mindustry.entities.Damage;
+import mindustry.entities.Effect;
 import mindustry.entities.EntityGroup;
 import mindustry.entities.Units;
+import mindustry.entities.effect.MultiEffect;
+import mindustry.entities.effect.WaveEffect;
+import mindustry.entities.effect.WrapEffect;
 import mindustry.game.EventType;
 import mindustry.game.Team;
 import mindustry.gen.*;
@@ -54,12 +59,14 @@ public class MissileLaunchUnit implements Drawc, Entityc, LaunchPayloadc, Posc, 
     public float ty;
     public float ep;
     public Building target;
+    public Effect ef;
 
-    protected MissileLaunchUnit(float tx, float ty, float ep) {
+    protected MissileLaunchUnit(float tx, float ty, float ep, Effect ef) {
         this.team = Team.derelict;
         this.tx = tx;
         this.ty = ty;
         this.ep = ep;
+        this.ef = ef;
     }
 
     protected MissileLaunchUnit(float ep) {
@@ -184,31 +191,24 @@ public class MissileLaunchUnit implements Drawc, Entityc, LaunchPayloadc, Posc, 
         write.f(this.x);
         write.f(this.y);
     }
-
     public <T extends Entityc> T self() {
         return (T) this;
     }
-
     public <T> T as() {
         return (T) this;
     }
-
     public Building buildOn() {
         return Vars.world.buildWorld(this.x, this.y);
     }
-
     public boolean cheating() {
         return this.team.rules().cheat;
     }
-
     public boolean inFogTo(Team viewer) {
         return this.team != viewer && !Vars.fogControl.isVisible(viewer, this.x, this.y);
     }
-
     public boolean isAdded() {
         return this.added;
     }
-
     public boolean isLocal() {
         boolean var10000;
         label26: {
@@ -218,19 +218,15 @@ public class MissileLaunchUnit implements Drawc, Entityc, LaunchPayloadc, Posc, 
                     break label26;
                 }
             }
-
             var10000 = false;
             return var10000;
         }
-
         var10000 = true;
         return var10000;
     }
-
     public boolean isNull() {
         return false;
     }
-
     public boolean isRemote() {
         boolean var10000;
         if (this instanceof Unitc) {
@@ -240,84 +236,69 @@ public class MissileLaunchUnit implements Drawc, Entityc, LaunchPayloadc, Posc, 
                 return var10000;
             }
         }
-
         var10000 = false;
         return var10000;
     }
-
     public boolean onSolid() {
         Tile tile = this.tileOn();
         return tile == null || tile.solid();
     }
-
     public boolean serialize() {
         return true;
     }
-
     public float clipSize() {
         return Float.MAX_VALUE;
     }
-
     public float cx() {
         return this.x + this.fin(Interp.pow2In) * (12.0F + Mathf.randomSeedRange((long)(this.id() + 3), 4.0F));
     }
-
     public float cy() {
         return this.y + this.fin(Interp.pow5In) * (100.0F + Mathf.randomSeedRange((long)(this.id() + 2), 30.0F));
     }
-
     public float fin() {
         return this.time / this.lifetime;
     }
-
     public float getX() {
         return this.x;
     }
-
     public float getY() {
         return this.y;
     }
-
     public int tileX() {
         return World.toTile(this.x);
     }
-
     public int tileY() {
         return World.toTile(this.y);
     }
-
     public Block blockOn() {
         Tile tile = this.tileOn();
         return tile == null ? Blocks.air : tile.block();
     }
-
     public Tile tileOn() {
         return Vars.world.tileWorld(this.x, this.y);
     }
-
     public Floor floorOn() {
         Tile tile = this.tileOn();
         return tile != null && tile.block() == Blocks.air ? tile.floor() : (Floor)Blocks.air;
     }
-
     public CoreBlock.CoreBuild closestCore() {
         return Vars.state.teams.closestCore(this.x, this.y, this.team);
     }
-
     public CoreBlock.CoreBuild closestEnemyCore() {
         return Vars.state.teams.closestEnemyCore(this.x, this.y, this.team);
     }
-
     public CoreBlock.CoreBuild core() {
         return this.team.core();
     }
-
-    public static MissileLaunchUnit create(float tx, float ty, float ep) {
-        return new MissileLaunchUnit(tx, ty, ep);
-    }
-
-    public static MissileLaunchUnit create(float ep) {
-        return new MissileLaunchUnit(ep);
+    public static MissileLaunchUnit create(float tx, float ty, float ep, TextureRegion region) {
+        return new MissileLaunchUnit(tx, ty, ep,
+            new MultiEffect(new Effect[]{Fx.massiveExplosion, new WrapEffect(Fx.dynamicSpikes, Pal.techBlue, 24.0F), new WaveEffect() {{
+                this.colorFrom = this.colorTo = Pal.techBlue;
+                this.sizeTo = ep * 10;
+                this.lifetime = ep;
+                this.strokeFrom = 4.0F;
+            }}})
+        );
     }
     public void setTarget(){
         this.target = this.closestEnemyCore();
@@ -358,11 +339,11 @@ public class MissileLaunchUnit implements Drawc, Entityc, LaunchPayloadc, Posc, 
         Draw.z(129.0F);
         Block var9 = this.blockOn();
         Object var10000;
-        if (var9 instanceof LaunchPad) {
-            LaunchPad p = (LaunchPad)var9;
+        if (var9 instanceof Launcher) {
+            Launcher p = (Launcher)var9;
             var10000 = p.podRegion;
         } else {
-            var10000 = Core.atlas.find("launchpod");
+            var10000 = Core.atlas.find("launcher");
         }
 
         TextureRegion region = (TextureRegion) var10000;
@@ -382,21 +363,14 @@ public class MissileLaunchUnit implements Drawc, Entityc, LaunchPayloadc, Posc, 
         if (this.added) {
             Building target = this.closestEnemyCore();
             if(target != null) {
-                Unit entity = UnitTypes.crawler.create(this.team);
-                entity.set(target);
-                entity.add();
-                Log.info("Spawned new crawler");
-            }
-            else {
-
-                Log.err("Nowhere to spawn crawler");
+                Damage.damage(this.team, target.getX(), target.getY(), this.ep * 10, (this.ep * this.ep * this.ep));
+                this.ef.at(target);
             }
             Groups.all.removeIndex(this, this.index__all);
             this.index__all = -1;
             Groups.draw.removeIndex(this, this.index__draw);
             this.index__draw = -1;
             this.added = false;
-            Log.info("MissileLaunchUnit disappeared.");
             if (Vars.state.isCampaign()) {
                 Sector destsec = Vars.state.rules.sector.info.getRealDestination();
                 if (this.team() == Vars.state.rules.defaultTeam && destsec != null && (destsec != Vars.state.rules.sector || Vars.net.client())) {
