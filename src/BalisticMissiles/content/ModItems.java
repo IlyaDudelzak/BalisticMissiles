@@ -11,10 +11,6 @@ public class ModItems {
     ;
 
     public static void load(){
-        penis = new MissileItem("penis", Color.valueOf("a26a1e"), 3){{
-            this.hardness = 1;
-            this.cost = 10f;
-        }};
         bomb = new Explosive("bomb", Color.valueOf("aaaaaa")) {{
             this.cost = 2.5f;
             this.explosiveness = 1f;

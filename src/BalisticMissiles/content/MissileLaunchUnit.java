@@ -191,6 +191,7 @@ public class MissileLaunchUnit implements Drawc, Entityc, LaunchPayloadc, Posc, 
         write.f(this.x);
         write.f(this.y);
     }
+
     public <T extends Entityc> T self() {
         return (T) this;
     }
