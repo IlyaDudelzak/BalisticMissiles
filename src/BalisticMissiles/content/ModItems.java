@@ -6,7 +6,7 @@ import mindustry.type.*;
 public class ModItems {
     public static Item
 
-    penis, bomb, nuke, hBomb
+    bomb, nuke, hBomb
 
     ;
 
